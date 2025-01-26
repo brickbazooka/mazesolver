@@ -197,8 +197,14 @@ class Maze:
 
 			self._break_walls_r(ni, nj)
 
+	def _reset_cells_visited(self):
+		for i in range(self.num_cols):
+			for j in range(self.num_rows):
+				self._cells[i][j].visited = False
+
 	def break_walls(self):
 		self._break_walls_r(0, 0)
+		self._reset_cells_visited()
 
 
 def main():
