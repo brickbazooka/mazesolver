@@ -50,20 +50,85 @@ class Line:
 		)
 
 
+class Cell:
+	def __init__(self, top_left, bottom_right, window):
+		self._top_left = top_left
+		self._bottom_right = bottom_right
+
+		self._win = window
+
+		self.has_left_wall = True
+		self.has_right_wall = True
+		self.has_top_wall = True
+		self.has_bottom_wall = True
+
+	def draw(self):
+		top_left = self._top_left
+		bottom_right = self._bottom_right
+
+		top_right = Point(bottom_right.x, top_left.y)
+		bottom_left = Point(top_left.x, bottom_right.y)
+
+		if self.has_top_wall:
+			self._win.draw_line(Line(top_left, top_right))
+		if self.has_right_wall:
+			self._win.draw_line(Line(top_right, bottom_right))
+		if self.has_bottom_wall:
+			self._win.draw_line(Line(bottom_right, bottom_left))
+		if self.has_left_wall:
+			self._win.draw_line(Line(bottom_left, top_left))
+
+	def draw_move(self, to_cell, undo=False):
+		start_x = (self._top_left.x + self._bottom_right.x) // 2
+		start_y = (self._top_left.y + self._bottom_right.y) // 2
+		end_x = (to_cell._top_left.x + to_cell._bottom_right.x) // 2
+		end_y = (to_cell._top_left.y + to_cell._bottom_right.y) // 2
+
+		color = "gray" if undo else "red"
+		self._win.draw_line(Line(Point(start_x, start_y), Point(end_x, end_y)), fill_color=color)
+
+
 def main():
 	window = Window(800, 600)
 
-	black_line = Line(Point(100, 100), Point(200, 200))
-	window.draw_line(line=black_line, fill_color="black")
+	cell1 = Cell(Point(50, 50), Point(150, 150), window)
+	cell1.has_top_wall = False
+	cell1.draw()
 
-	red_line = Line(Point(200, 200), Point(300, 100))
-	window.draw_line(line=red_line, fill_color="red")
+	cell2 = Cell(Point(200, 50), Point(300, 150), window)
+	cell2.has_right_wall = False
+	cell2.draw()
 
-	blue_line = Line(Point(300, 100), Point(400, 200))
-	window.draw_line(line=blue_line, fill_color="blue")
+	cell3 = Cell(Point(350, 50), Point(450, 150), window)
+	cell3.has_bottom_wall = False
+	cell3.draw()
 
-	yellow_line = Line(Point(400, 200), Point(500, 100))
-	window.draw_line(line=yellow_line, fill_color="yellow")
+	cell4 = Cell(Point(500, 50), Point(600, 150), window)
+	cell4.has_left_wall = False
+	cell4.draw()
+
+	cell5 = Cell(Point(50, 200), Point(150, 300), window)
+	cell5.has_top_wall = False
+	cell5.has_right_wall = False
+	cell5.draw()
+
+	cell6 = Cell(Point(200, 200), Point(300, 300), window)
+	cell6.has_right_wall = False
+	cell6.has_bottom_wall = False
+	cell6.draw()
+
+	cell7 = Cell(Point(350, 200), Point(450, 300), window)
+	cell7.has_bottom_wall = False
+	cell7.has_left_wall = False
+	cell7.draw()
+
+	cell8 = Cell(Point(500, 200), Point(600, 300), window)
+	cell8.has_left_wall = False
+	cell8.has_top_wall = False
+	cell8.draw()
+
+	cell9 = Cell(Point(50, 350), Point(150, 450), window)
+	cell9.draw()
 
 	window.wait_for_close()
 
