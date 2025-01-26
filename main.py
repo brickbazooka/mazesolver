@@ -148,11 +148,13 @@ class Maze:
 		self._cells[i][j].draw()
 		self._animate()
 
-	def _animate(self):
+	def _animate(self, no_sleep=False, sleep_time=0.05):
 		if not self.win:
 			return
 		self.win.redraw()
-		time.sleep(0.05)
+		if no_sleep:
+			return
+		time.sleep(sleep_time)
 
 	def _break_entrance_and_exit(self):
 		self._cells[0][0].has_top_wall = False
@@ -206,12 +208,40 @@ class Maze:
 		self._break_walls_r(0, 0)
 		self._reset_cells_visited()
 
+	def _solve_r(self, i, j):
+		# self._animate()
+		self._cells[i][j].visited = True
+
+		if i == self.num_cols - 1 and j == self.num_rows - 1:
+			return True
+
+		directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+		for di, dj in directions:
+			ni, nj = i + di, j + dj
+			if 0 <= ni < self.num_cols and 0 <= nj < self.num_rows and not self._cells[ni][nj].visited:
+				if (di == -1 and not self._cells[i][j].has_left_wall) or \
+				   (di == 1 and not self._cells[i][j].has_right_wall) or \
+				   (dj == -1 and not self._cells[i][j].has_top_wall) or \
+				   (dj == 1 and not self._cells[i][j].has_bottom_wall):
+					self._cells[i][j].draw_move(self._cells[ni][nj])
+					self._animate()
+					if self._solve_r(ni, nj):
+						return True
+					self._cells[i][j].draw_move(self._cells[ni][nj], undo=True)
+					self._animate()
+
+		return False
+
+	def solve(self):
+		return self._solve_r(0, 0)
+
 
 def main():
 	window = Window(800, 600)
-	maze = Maze(Point(50, 50), 10, 10, 50, 50, window, seed=0)
+	maze = Maze(Point(50, 50), 10, 10, 50, 50, window, seed=None)
 	maze._break_entrance_and_exit()
 	maze.break_walls()
+	maze.solve()
 	window.wait_for_close()
 
 
