@@ -52,7 +52,7 @@ class Line:
 
 
 class Cell:
-	def __init__(self, top_left, bottom_right, window):
+	def __init__(self, top_left, bottom_right, window=None):
 		self._top_left = top_left
 		self._bottom_right = bottom_right
 
@@ -64,6 +64,8 @@ class Cell:
 		self.has_bottom_wall = True
 
 	def draw(self):
+		if not self._win:
+			return
 		top_left = self._top_left
 		bottom_right = self._bottom_right
 
@@ -80,6 +82,8 @@ class Cell:
 			self._win.draw_line(Line(bottom_left, top_left))
 
 	def draw_move(self, to_cell, undo=False):
+		if not self._win:
+			return
 		start_x = (self._top_left.x + self._bottom_right.x) // 2
 		start_y = (self._top_left.y + self._bottom_right.y) // 2
 		end_x = (to_cell._top_left.x + to_cell._bottom_right.x) // 2
@@ -93,13 +97,19 @@ class Cell:
 
 
 class Maze:
-	def __init__(self, origin, num_rows, num_cols, cell_size_x, cell_size_y, win):
+	def __init__(
+			self,
+			origin,
+			num_rows, num_cols,
+			cell_size_x, cell_size_y,
+			window=None
+		):
 		self.origin = origin
 		self.num_rows = num_rows
 		self.num_cols = num_cols
 		self.cell_size_x = cell_size_x
 		self.cell_size_y = cell_size_y
-		self.win = win
+		self.win = window
 		self._cells = []
 		self._create_cells()
 
@@ -124,6 +134,8 @@ class Maze:
 		self._animate()
 
 	def _animate(self):
+		if not self.win:
+			return
 		self.win.redraw()
 		time.sleep(0.05)
 
