@@ -1,4 +1,5 @@
 import time
+import random
 from tkinter import Tk, BOTH, Canvas
 
 
@@ -62,6 +63,7 @@ class Cell:
 		self.has_right_wall = True
 		self.has_top_wall = True
 		self.has_bottom_wall = True
+		self.visited = False
 
 	def draw(self):
 		if not self._win:
@@ -112,7 +114,8 @@ class Maze:
 			origin,
 			num_rows, num_cols,
 			cell_size_x, cell_size_y,
-			window=None
+			window=None,
+			seed=None
 		):
 		self.origin = origin
 		self.num_rows = num_rows
@@ -120,6 +123,8 @@ class Maze:
 		self.cell_size_x = cell_size_x
 		self.cell_size_y = cell_size_y
 		self.win = window
+		if seed is not None:
+			random.seed(seed)
 		self._cells = []
 		self._create_cells()
 
@@ -155,11 +160,52 @@ class Maze:
 		self._cells[self.num_cols - 1][self.num_rows - 1].has_bottom_wall = False
 		self._draw_cell(self.num_cols - 1, self.num_rows - 1)
 
+	def _break_walls_r(self, i, j):
+		self._cells[i][j].visited = True
+		while True:
+			directions = []
+			if i > 0 and not self._cells[i - 1][j].visited:
+				directions.append((-1, 0))
+			if i < self.num_cols - 1 and not self._cells[i + 1][j].visited:
+				directions.append((1, 0))
+			if j > 0 and not self._cells[i][j - 1].visited:
+				directions.append((0, -1))
+			if j < self.num_rows - 1 and not self._cells[i][j + 1].visited:
+				directions.append((0, 1))
+
+			if not directions:
+				self._draw_cell(i, j)
+				return
+
+			di, dj = random.choice(directions)
+			ni, nj = i + di, j + dj
+
+			if di == -1:
+				self._cells[i][j].has_left_wall = False
+				self._cells[ni][nj].has_right_wall = False
+			elif di == 1:
+				self._cells[i][j].has_right_wall = False
+				self._cells[ni][nj].has_left_wall = False
+			elif dj == -1:
+				self._cells[i][j].has_top_wall = False
+				self._cells[ni][nj].has_bottom_wall = False
+			elif dj == 1:
+				self._cells[i][j].has_bottom_wall = False
+				self._cells[ni][nj].has_top_wall = False
+			self._draw_cell(i, j)
+			self._draw_cell(ni, nj)
+
+			self._break_walls_r(ni, nj)
+
+	def break_walls(self):
+		self._break_walls_r(0, 0)
+
 
 def main():
 	window = Window(800, 600)
-	maze = Maze(Point(50, 50), 10, 10, 50, 50, window)
+	maze = Maze(Point(50, 50), 10, 10, 50, 50, window, seed=0)
 	maze._break_entrance_and_exit()
+	maze.break_walls()
 	window.wait_for_close()
 
 
