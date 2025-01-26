@@ -1,6 +1,7 @@
 import time
 import random
 from tkinter import Tk, BOTH, Canvas
+from collections import deque
 
 
 class Window:
@@ -17,6 +18,7 @@ class Window:
 	def redraw(self):
 		self.__root.update_idletasks()
 		self.__root.update()
+		return
 
 	def draw_line(self, line, fill_color="black", width=2):
 		line.draw(self.canvas, fill_color, width)
@@ -93,7 +95,7 @@ class Cell:
 		else:
 			self._win.draw_line(Line(bottom_left, top_left), fill_color=bg_color)
 
-	def draw_move(self, to_cell, undo=False):
+	def draw_move(self, to_cell, undo=False, width=2):
 		if not self._win:
 			return
 		start_x = (self._top_left.x + self._bottom_right.x) // 2
@@ -101,11 +103,27 @@ class Cell:
 		end_x = (to_cell._top_left.x + to_cell._bottom_right.x) // 2
 		end_y = (to_cell._top_left.y + to_cell._bottom_right.y) // 2
 
+		bg_color = "#d9d9d9"  # Background color
 		color = "gray" if undo else "red"
-		self._win.draw_line(
-			Line(Point(start_x, start_y), Point(end_x, end_y)),
-			fill_color=color
-		)
+		
+		if undo:
+			self._win.draw_line(
+				Line(Point(start_x, start_y), Point(end_x, end_y)),
+				fill_color=bg_color,
+				width=width
+			)
+			# Display the "undo" move
+			self._win.draw_line(
+				Line(Point(start_x, start_y), Point(end_x, end_y)),
+				fill_color=color,
+				width=2
+			)
+		else:
+			self._win.draw_line(
+				Line(Point(start_x, start_y), Point(end_x, end_y)),
+				fill_color=color,
+				width=width
+			)
 
 
 class Maze:
@@ -146,7 +164,7 @@ class Maze:
 		self._cells[i][j]._top_left = Point(x0, y0)
 		self._cells[i][j]._bottom_right = Point(x1, y1)
 		self._cells[i][j].draw()
-		self._animate()
+		self._animate(sleep_time=0.01)
 
 	def _animate(self, no_sleep=False, sleep_time=0.05):
 		if not self.win:
@@ -155,6 +173,7 @@ class Maze:
 		if no_sleep:
 			return
 		time.sleep(sleep_time)
+		return
 
 	def _break_entrance_and_exit(self):
 		self._cells[0][0].has_top_wall = False
@@ -208,7 +227,7 @@ class Maze:
 		self._break_walls_r(0, 0)
 		self._reset_cells_visited()
 
-	def _solve_r(self, i, j):
+	def _solve_dfs_r(self, i, j):
 		# self._animate()
 		self._cells[i][j].visited = True
 
@@ -223,25 +242,68 @@ class Maze:
 				   (di == 1 and not self._cells[i][j].has_right_wall) or \
 				   (dj == -1 and not self._cells[i][j].has_top_wall) or \
 				   (dj == 1 and not self._cells[i][j].has_bottom_wall):
-					self._cells[i][j].draw_move(self._cells[ni][nj])
-					self._animate()
-					if self._solve_r(ni, nj):
+					self._cells[i][j].draw_move(self._cells[ni][nj], width=8)
+					self._animate(sleep_time=0.1)
+					if self._solve_dfs_r(ni, nj):
 						return True
-					self._cells[i][j].draw_move(self._cells[ni][nj], undo=True)
-					self._animate()
+					self._cells[i][j].draw_move(self._cells[ni][nj], undo=True, width=8)
+					self._animate(sleep_time=0.1)
 
 		return False
 
-	def solve(self):
-		return self._solve_r(0, 0)
+	def solve_dfs(self):
+		return self._solve_dfs_r(0, 0)
+
+	def _solve_bfs(self):
+		queue = deque([(0, 0)])
+		visited = set((0, 0))
+		parent = {}
+
+		while queue:
+			i, j = queue.popleft()
+			if (i, j) == (self.num_cols - 1, self.num_rows - 1):
+				self._trace_bfs_path(parent, i, j)
+				return True
+
+			for di, dj in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+				ni, nj = i + di, j + dj
+				if 0 <= ni < self.num_cols and 0 <= nj < self.num_rows and (ni, nj) not in visited:
+					if (di == -1 and not self._cells[i][j].has_left_wall) or \
+					   (di == 1 and not self._cells[i][j].has_right_wall) or \
+					   (dj == -1 and not self._cells[i][j].has_top_wall) or \
+					   (dj == 1 and not self._cells[i][j].has_bottom_wall):
+						queue.append((ni, nj))
+						visited.add((ni, nj))
+						parent[(ni, nj)] = (i, j)
+						self._cells[i][j].draw_move(self._cells[ni][nj], undo=True)
+						self._animate(sleep_time=0.1)
+
+		return False
+
+	def _trace_bfs_path(self, parent, i, j):
+		trace_path = [(i, j)]
+		current = (i, j)
+		while parent.get(current, None) is not None and current != (0, 0):
+			previous = parent[current]
+			trace_path.append(previous)
+			current = previous
+
+		trace_path.reverse()
+		for (ri, rj), (ni, nj) in zip(trace_path, trace_path[1:]):
+			self._cells[ri][rj].draw_move(self._cells[ni][nj], width=8)
+			self._animate()
+
+	def solve_bfs(self):
+		return self._solve_bfs()
 
 
 def main():
 	window = Window(800, 600)
-	maze = Maze(Point(50, 50), 10, 10, 50, 50, window, seed=None)
+	maze = Maze(Point(50, 50), 10, 10, 50, 50, window, seed=25)
 	maze._break_entrance_and_exit()
 	maze.break_walls()
-	maze.solve()
+	# maze.solve_dfs()
+	maze.solve_bfs()
 	window.wait_for_close()
 
 
