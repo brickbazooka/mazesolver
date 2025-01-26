@@ -1,3 +1,4 @@
+import time
 from tkinter import Tk, BOTH, Canvas
 
 
@@ -85,51 +86,51 @@ class Cell:
 		end_y = (to_cell._top_left.y + to_cell._bottom_right.y) // 2
 
 		color = "gray" if undo else "red"
-		self._win.draw_line(Line(Point(start_x, start_y), Point(end_x, end_y)), fill_color=color)
+		self._win.draw_line(
+			Line(Point(start_x, start_y), Point(end_x, end_y)),
+			fill_color=color
+		)
+
+
+class Maze:
+	def __init__(self, origin, num_rows, num_cols, cell_size_x, cell_size_y, win):
+		self.origin = origin
+		self.num_rows = num_rows
+		self.num_cols = num_cols
+		self.cell_size_x = cell_size_x
+		self.cell_size_y = cell_size_y
+		self.win = win
+		self._cells = []
+		self._create_cells()
+
+	def _create_cells(self):
+		for i in range(self.num_cols):
+			column = []
+			for j in range(self.num_rows):
+				column.append(Cell(Point(0, 0), Point(0, 0), self.win))
+			self._cells.append(column)
+		for i in range(self.num_cols):
+			for j in range(self.num_rows):
+				self._draw_cell(i, j)
+
+	def _draw_cell(self, i, j):
+		x0 = self.origin.x + i * self.cell_size_x
+		y0 = self.origin.y + j * self.cell_size_y
+		x1 = x0 + self.cell_size_x
+		y1 = y0 + self.cell_size_y
+		self._cells[i][j]._top_left = Point(x0, y0)
+		self._cells[i][j]._bottom_right = Point(x1, y1)
+		self._cells[i][j].draw()
+		self._animate()
+
+	def _animate(self):
+		self.win.redraw()
+		time.sleep(0.05)
 
 
 def main():
 	window = Window(800, 600)
-
-	cell1 = Cell(Point(50, 50), Point(150, 150), window)
-	cell1.has_top_wall = False
-	cell1.draw()
-
-	cell2 = Cell(Point(200, 50), Point(300, 150), window)
-	cell2.has_right_wall = False
-	cell2.draw()
-
-	cell3 = Cell(Point(350, 50), Point(450, 150), window)
-	cell3.has_bottom_wall = False
-	cell3.draw()
-
-	cell4 = Cell(Point(500, 50), Point(600, 150), window)
-	cell4.has_left_wall = False
-	cell4.draw()
-
-	cell5 = Cell(Point(50, 200), Point(150, 300), window)
-	cell5.has_top_wall = False
-	cell5.has_right_wall = False
-	cell5.draw()
-
-	cell6 = Cell(Point(200, 200), Point(300, 300), window)
-	cell6.has_right_wall = False
-	cell6.has_bottom_wall = False
-	cell6.draw()
-
-	cell7 = Cell(Point(350, 200), Point(450, 300), window)
-	cell7.has_bottom_wall = False
-	cell7.has_left_wall = False
-	cell7.draw()
-
-	cell8 = Cell(Point(500, 200), Point(600, 300), window)
-	cell8.has_left_wall = False
-	cell8.has_top_wall = False
-	cell8.draw()
-
-	cell9 = Cell(Point(50, 350), Point(150, 450), window)
-	cell9.draw()
-
+	maze = Maze(Point(50, 50), 10, 10, 50, 50, window)
 	window.wait_for_close()
 
 
